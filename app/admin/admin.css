@@ -1,0 +1,307 @@
+:root {
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --surface-alt: #eef2ff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --danger: #dc2626;
+  --danger-dark: #b91c1c;
+  --border: #e5e7eb;
+  --shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* --- Навігація --- */
+.admin-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: #0f172a;
+  color: #fff;
+  padding: 16px 32px;
+}
+
+.admin-nav-title {
+  font-weight: 700;
+  margin-right: auto;
+}
+
+.admin-nav a {
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.admin-nav a:hover {
+  color: #fff;
+}
+
+.admin-nav-logout {
+  color: rgba(255, 100, 100, 0.85) !important;
+}
+
+/* --- Основний контент --- */
+.admin-main {
+  width: min(900px, calc(100% - 32px));
+  margin: 32px auto;
+}
+
+.admin-main h1 {
+  margin-top: 0;
+}
+
+/* --- Дашборд --- */
+.stats-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 140px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  text-align: center;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.stat-number {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.last-updated {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* --- Форми --- */
+.admin-form {
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.admin-form button {
+  align-self: flex-start;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-form button:hover {
+  background: var(--primary-dark);
+}
+
+.cancel-link {
+  align-self: flex-start;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* --- Списки --- */
+.admin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-list li {
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+}
+
+.admin-list-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-list-date {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.admin-list-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.admin-list-actions form {
+  margin: 0;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.delete-btn:hover {
+  color: var(--danger-dark);
+  text-decoration: underline;
+}
+
+.admin-list-empty {
+  color: var(--muted);
+  font-style: italic;
+  box-shadow: none !important;
+}
+
+/* --- Медіа --- */
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.media-item {
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.media-item img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.media-url {
+  font-size: 0.75rem;
+  color: var(--muted);
+  word-break: break-all;
+  cursor: pointer;
+}
+
+/* --- Сторінка входу --- */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.login-form {
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 32px;
+  width: min(340px, calc(100% - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-form h1 {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.login-form input {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.login-form button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-form button:hover {
+  background: var(--primary-dark);
+}
+
+.login-form .error {
+  background: #fee2e2;
+  color: var(--danger-dark);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin: 0;
+}
