@@ -39,6 +39,7 @@ const ENTITY_LABELS = [
     'settings' => 'налаштування',
     'user' => 'користувач',
     'auth' => 'авторизація',
+    'category' => 'категорія',
 ];
 ?>
 <!DOCTYPE html>

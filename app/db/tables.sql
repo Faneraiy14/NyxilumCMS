@@ -52,6 +52,21 @@ CREATE TABLE activity_log (
     INDEX idx_created (created_at)
 );
 
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    description VARCHAR(500) NULL
+);
+
+CREATE TABLE content_categories (
+    content_id INT NOT NULL,
+    category_id INT NOT NULL,
+    PRIMARY KEY (content_id, category_id),
+    FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+);
+
 CREATE TABLE settings (
     setting_key VARCHAR(64) PRIMARY KEY,
     setting_value TEXT
@@ -60,4 +75,4 @@ CREATE TABLE settings (
 INSERT INTO settings (setting_key, setting_value) VALUES
     ('site_name', 'Nyxilum CMS'),
     ('default_lang', 'uk'),
-    ('schema_version', '7');
+    ('schema_version', '8');

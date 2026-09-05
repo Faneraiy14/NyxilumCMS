@@ -3,6 +3,7 @@
     <a href="/" target="_blank">На сайт</a>
     <a href="index.php">Дашборд</a>
     <a href="content.php">Контент</a>
+    <a href="categories.php">Категорії</a>
     <a href="menu.php">Меню</a>
     <a href="media.php">Медіа</a>
     <?php if (current_role() === 'admin') : ?>

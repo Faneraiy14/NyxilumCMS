@@ -62,6 +62,25 @@ CREATE TABLE activity_log (
     INDEX idx_created (created_at)
 );
 
+-- Категорії - вільна багато-до-багатьох прив'язка до контенту через
+-- content_categories, а не окрема система "тегів" поруч - одного
+-- гнучкого механізму досить для обох сценаріїв (і "категорія" на
+-- сторінці, і "тег" на записі).
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    description VARCHAR(500) NULL
+);
+
+CREATE TABLE content_categories (
+    content_id INT NOT NULL,
+    category_id INT NOT NULL,
+    PRIMARY KEY (content_id, category_id),
+    FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+);
+
 CREATE TABLE settings (
     setting_key VARCHAR(64) PRIMARY KEY,
     setting_value TEXT
@@ -73,4 +92,4 @@ INSERT INTO settings (setting_key, setting_value) VALUES
     -- Версія СХЕМИ БД (не версія коду!) - коли з'явиться апдейтер, він
     -- звірятиме це число й запускатиме тільки міграції новіші за нього,
     -- замість припущення "у всіх однакова структура таблиць".
-    ('schema_version', '7');
+    ('schema_version', '8');

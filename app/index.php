@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/render.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/categories.php';
 
 // php -S: якщо це існуючий статичний файл - віддаємо як є.
 if (PHP_SAPI === 'cli-server') {
@@ -99,6 +100,33 @@ if ($path === 'search') {
     exit;
 }
 
+if (str_starts_with($path, 'category/')) {
+    $slug = substr($path, strlen('category/'));
+    $stmt = $db->prepare('SELECT * FROM categories WHERE slug = ?');
+    $stmt->execute([$slug]);
+    $category = $stmt->fetch();
+
+    if (!$category) {
+        http_response_code(404);
+        render('404', ['db' => $db, 'siteName' => $siteName]);
+        exit;
+    }
+
+    $itemsStmt = $db->prepare(
+        "SELECT content.* FROM content
+         JOIN content_categories cc ON cc.content_id = content.id
+         WHERE cc.category_id = ? AND content.status = 'published'
+         ORDER BY content.updated_at DESC"
+    );
+    $itemsStmt->execute([$category['id']]);
+    render('category', [
+        'db' => $db, 'siteName' => $siteName,
+        'pageTitle' => $category['name'] . ' — ' . $siteName,
+        'category' => $category, 'items' => $itemsStmt->fetchAll(),
+    ]);
+    exit;
+}
+
 // Спільне для звичайного перегляду й прев'ю - обирає тип-специфічний
 // шаблон (напр. "post" -> templates/type-post.php), якщо такий існує,
 // інакше типовий page.php. preg_match тут не про "недовіру адміну" (тип
@@ -115,6 +143,7 @@ function render_content_item(PDO $db, string $siteName, array $item, bool $isPre
         'pageTitle' => ($isPreview ? '[Чернетка] ' : '') . ($item['meta_title'] ?: $item['title']) . ' — ' . $siteName,
         'metaDescription' => $item['meta_description'] ?? '',
         'item' => $item,
+        'itemCategories' => get_categories_for_content($db, (int) $item['id']),
     ]);
 }
 

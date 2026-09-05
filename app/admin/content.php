@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/activity.php';
+require_once __DIR__ . '/../includes/categories.php';
 require_login();
 
 $db = get_db();
@@ -27,17 +28,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $body = $_POST['body'] ?? '';
         $status = ($_POST['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
 
+        $categoryIds = array_map('intval', $_POST['categories'] ?? []);
+
         if ($title !== '' && $slug !== '') {
             if ($action === 'create') {
                 $stmt = $db->prepare('INSERT INTO content (type, slug, lang, title, meta_title, meta_description, body, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
                 $stmt->execute([$type, $slug, $lang, $title, $metaTitle, $metaDescription, $body, $status]);
-                log_activity('create', 'content', (int) $db->lastInsertId(), $title);
+                $id = (int) $db->lastInsertId();
+                log_activity('create', 'content', $id, $title);
             } else {
                 $id = (int) ($_POST['id'] ?? 0);
                 $stmt = $db->prepare('UPDATE content SET type = ?, slug = ?, lang = ?, title = ?, meta_title = ?, meta_description = ?, body = ?, status = ? WHERE id = ?');
                 $stmt->execute([$type, $slug, $lang, $title, $metaTitle, $metaDescription, $body, $status, $id]);
                 log_activity('update', 'content', $id, $title);
             }
+            set_content_categories($db, $id, $categoryIds);
         }
     } elseif ($action === 'delete') {
         $id = (int) ($_POST['id'] ?? 0);
@@ -55,11 +60,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $editId = isset($_GET['edit']) ? (int) $_GET['edit'] : null;
 $editItem = null;
+$editItemCategoryIds = [];
 if ($editId !== null) {
     $stmt = $db->prepare('SELECT * FROM content WHERE id = ?');
     $stmt->execute([$editId]);
     $editItem = $stmt->fetch();
+    if ($editItem) {
+        $editItemCategoryIds = array_column(get_categories_for_content($db, $editId), 'id');
+    }
 }
+
+$allCategories = $db->query('SELECT id, name FROM categories ORDER BY name')->fetchAll();
 
 // Фільтри за типом/статусом (з дашборду чи вручну в URL) - обидва
 // необов'язкові, порожній фільтр = показати все.
@@ -143,6 +154,22 @@ $items = $stmt->fetchAll();
                 <div id="editor-toolbar"></div>
                 <div id="editor-content"></div>
                 <textarea name="body" id="body-field" style="display:none;"><?php echo htmlspecialchars($editItem['body'] ?? ''); ?></textarea>
+            </label>
+
+            <label>
+                Категорії
+                <div class="checkbox-list">
+                    <?php foreach ($allCategories as $cat) : ?>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="categories[]" value="<?php echo (int) $cat['id']; ?>"
+                                <?php echo in_array($cat['id'], $editItemCategoryIds, true) ? 'checked' : ''; ?>>
+                            <?php echo htmlspecialchars($cat['name']); ?>
+                        </label>
+                    <?php endforeach; ?>
+                    <?php if (!$allCategories) : ?>
+                        <span class="admin-list-empty">Категорій ще немає - можна <a href="categories.php">створити тут</a>.</span>
+                    <?php endif; ?>
+                </div>
             </label>
 
             <label>

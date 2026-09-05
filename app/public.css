@@ -69,6 +69,14 @@ a { color: var(--primary); }
 .page-body h1, .page-body h2, .page-body h3 { margin-top: 1.2em; }
 .post-date { color: var(--muted); font-size: 0.85rem; margin: 0 0 8px; }
 
+.content-categories { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+.category-badge {
+  display: inline-block; background: var(--surface-alt); color: var(--text);
+  border-radius: 999px; padding: 4px 12px; margin: 0 6px 6px 0;
+  font-size: 0.8rem; text-decoration: none;
+}
+.category-badge:hover { background: var(--primary); color: #fff; }
+
 .not-found { text-align: center; padding: 60px 0; }
 .not-found h1 { font-size: 3rem; margin-bottom: 0; }
 .back-link { display: inline-block; margin-top: 20px; text-decoration: none; color: var(--muted); }
