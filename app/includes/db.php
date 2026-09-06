@@ -17,10 +17,21 @@ function get_db(): PDO
         }
         require CONFIG_PATH; // визначає DB_HOST, DB_NAME, DB_USER, DB_PASS
 
+        // env-змінні мають пріоритет над config.php - ЛИШЕ для тестів
+        // (tests/bootstrap.php), щоб підключатись до окремої тестової
+        // бази, не чіпаючи config.php реального інсталу. У звичайній
+        // роботі сайту ці env-змінні просто не виставлені, і все йде як
+        // раніше, з config.php.
+        $dbHost = getenv('DB_HOST') ?: DB_HOST;
+        $dbPort = getenv('DB_PORT') ?: '3306';
+        $dbName = getenv('DB_NAME') ?: DB_NAME;
+        $dbUser = getenv('DB_USER') ?: DB_USER;
+        $dbPass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : DB_PASS;
+
         $pdo = new PDO(
-            'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
-            DB_USER,
-            DB_PASS,
+            'mysql:host=' . $dbHost . ';port=' . $dbPort . ';dbname=' . $dbName . ';charset=utf8mb4',
+            $dbUser,
+            $dbPass,
             [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
