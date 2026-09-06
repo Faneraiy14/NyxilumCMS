@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: "PHP ${{ matrix.php-version }} (PHPUnit)"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.3"]
+    # Одноразовий MySQL-контейнер лише для цього прогону CI - живе рівно
+    # стільки, скільки job, і зникає разом з ним. Жодного зв'язку з
+    # реальною базою сайту - тести пишуть/видаляють рядки (категорії,
+    # контент), тому не можна пускати їх на щось довговічне.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: nyxilum_cms_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: nyxilum_cms_test
+      DB_USER: root
+      DB_PASS: root
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: pdo_mysql, fileinfo
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - name: Синтаксична перевірка всіх PHP-файлів
+        run: |
+          find app -name "*.php" -not -path "app/uploads/*" -print0 | xargs -0 -n1 php -l
+      - name: Import schema into the throwaway CI database
+        run: mysql -h127.0.0.1 -uroot -proot nyxilum_cms_test < app/db/tables.sql
+      - run: composer test
