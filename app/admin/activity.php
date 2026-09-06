@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/activity.php';
 require_login();
 require_role('admin');
 
@@ -17,30 +18,6 @@ $stmt->bindValue(1, $perPage, PDO::PARAM_INT);
 $stmt->bindValue(2, $offset, PDO::PARAM_INT);
 $stmt->execute();
 $rows = $stmt->fetchAll();
-
-const ACTION_LABELS = [
-    'create' => 'Створення',
-    'update' => 'Оновлення',
-    'update_role' => 'Зміна ролі',
-    'delete' => 'Видалення',
-    'upload' => 'Завантаження',
-    'reset_password' => 'Скидання пароля',
-    'login' => 'Вхід',
-    'login_failed' => 'Невдалий вхід',
-    'login_2fa_failed' => 'Невірний код 2FA',
-    'enable_2fa' => 'Увімкнення 2FA',
-    'disable_2fa' => 'Вимкнення 2FA',
-];
-
-const ENTITY_LABELS = [
-    'content' => 'контент',
-    'menu_item' => 'пункт меню',
-    'media' => 'медіа',
-    'settings' => 'налаштування',
-    'user' => 'користувач',
-    'auth' => 'авторизація',
-    'category' => 'категорія',
-];
 ?>
 <!DOCTYPE html>
 <html lang="uk">

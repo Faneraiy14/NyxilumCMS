@@ -100,6 +100,29 @@ body {
   font-size: 0.9rem;
 }
 
+.quick-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.quick-action {
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.quick-action:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
 /* --- Форми --- */
 .admin-form {
   background: var(--surface);
