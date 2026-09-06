@@ -18,6 +18,7 @@ CREATE TABLE content (
     meta_description VARCHAR(500) NULL,
     body LONGTEXT,
     status ENUM('draft', 'published') NOT NULL DEFAULT 'draft',
+    publish_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_type_status (type, status)
@@ -75,4 +76,4 @@ CREATE TABLE settings (
 INSERT INTO settings (setting_key, setting_value) VALUES
     ('site_name', 'Nyxilum CMS'),
     ('default_lang', 'uk'),
-    ('schema_version', '8');
+    ('schema_version', '9');

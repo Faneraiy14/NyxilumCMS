@@ -29,3 +29,16 @@ function get_db(): PDO
     }
     return $pdo;
 }
+
+// SQL-фрагмент "цей запис реально видимий відвідувачам зараз" -
+// status='published' саме по собі недостатньо: publish_at дозволяє
+// підготувати запис заздалегідь (позначити published), а він лишається
+// невидимим, доки не настане вказаний час. NULL publish_at - видно
+// одразу. Один спільний фрагмент замість дублювання цієї умови в
+// кожному з half-дюжини публічних запитів (головна/sitemap/feed/
+// пошук/категорія/один запис) - легко забути додати другу половину
+// умови в новому місці, якщо писати її щоразу вручну.
+function published_condition(string $columnPrefix = ''): string
+{
+    return "{$columnPrefix}status = 'published' AND ({$columnPrefix}publish_at IS NULL OR {$columnPrefix}publish_at <= NOW())";
+}

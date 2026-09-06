@@ -192,6 +192,11 @@ body {
   font-size: 0.82rem;
 }
 
+.badge-scheduled {
+  color: #b45309;
+  font-weight: 600;
+}
+
 .admin-list-actions {
   display: flex;
   gap: 12px;

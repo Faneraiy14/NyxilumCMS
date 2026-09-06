@@ -28,18 +28,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $body = $_POST['body'] ?? '';
         $status = ($_POST['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
 
+        // datetime-local віддає "YYYY-MM-DDTHH:MM" - MySQL DATETIME хоче
+        // пробіл замість "T" і секунди. Порожнє поле чи щось нерозпізнане -
+        // NULL (видно одразу, як і раніше), а не помилка збереження.
+        $publishAtRaw = trim($_POST['publish_at'] ?? '');
+        $publishAt = null;
+        if ($publishAtRaw !== '') {
+            $parsed = DateTime::createFromFormat('Y-m-d\TH:i', $publishAtRaw);
+            if ($parsed !== false) {
+                $publishAt = $parsed->format('Y-m-d H:i:s');
+            }
+        }
+
         $categoryIds = array_map('intval', $_POST['categories'] ?? []);
 
         if ($title !== '' && $slug !== '') {
             if ($action === 'create') {
-                $stmt = $db->prepare('INSERT INTO content (type, slug, lang, title, meta_title, meta_description, body, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$type, $slug, $lang, $title, $metaTitle, $metaDescription, $body, $status]);
+                $stmt = $db->prepare('INSERT INTO content (type, slug, lang, title, meta_title, meta_description, body, status, publish_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$type, $slug, $lang, $title, $metaTitle, $metaDescription, $body, $status, $publishAt]);
                 $id = (int) $db->lastInsertId();
                 log_activity('create', 'content', $id, $title);
             } else {
                 $id = (int) ($_POST['id'] ?? 0);
-                $stmt = $db->prepare('UPDATE content SET type = ?, slug = ?, lang = ?, title = ?, meta_title = ?, meta_description = ?, body = ?, status = ? WHERE id = ?');
-                $stmt->execute([$type, $slug, $lang, $title, $metaTitle, $metaDescription, $body, $status, $id]);
+                $stmt = $db->prepare('UPDATE content SET type = ?, slug = ?, lang = ?, title = ?, meta_title = ?, meta_description = ?, body = ?, status = ?, publish_at = ? WHERE id = ?');
+                $stmt->execute([$type, $slug, $lang, $title, $metaTitle, $metaDescription, $body, $status, $publishAt, $id]);
                 log_activity('update', 'content', $id, $title);
             }
             set_content_categories($db, $id, $categoryIds);
@@ -181,6 +193,22 @@ $items = $stmt->fetchAll();
                 </select>
             </label>
 
+            <label>
+                Заплановано на (порожньо = видно одразу, коли статус "Опубліковано")
+                <?php
+                    // DATETIME з БД ("Y-m-d H:i:s") -> формат, який хоче
+                    // datetime-local ("Y-m-d\TH:i") - зворотне до парсингу вище.
+                    $publishAtValue = '';
+                    if (!empty($editItem['publish_at'])) {
+                        $publishAtDt = DateTime::createFromFormat('Y-m-d H:i:s', $editItem['publish_at']);
+                        if ($publishAtDt !== false) {
+                            $publishAtValue = $publishAtDt->format('Y-m-d\TH:i');
+                        }
+                    }
+                ?>
+                <input type="datetime-local" name="publish_at" value="<?php echo htmlspecialchars($publishAtValue); ?>">
+            </label>
+
             <button type="submit"><?php echo $editItem ? 'Зберегти зміни' : 'Створити'; ?></button>
             <?php if ($editItem) : ?>
                 <a href="content.php" class="cancel-link">Скасувати</a>
@@ -190,10 +218,28 @@ $items = $stmt->fetchAll();
         <ul class="admin-list">
             <?php foreach ($items as $item) : ?>
                 <li>
+                    <?php
+                        // "Заплановано" - лише коли статус УЖЕ published,
+                        // але publish_at ще не настав: саме тоді запис
+                        // фізично існує з правильним статусом, але
+                        // публічно ще не видно (published_condition() у
+                        // includes/db.php) - без цього бейджа адмін бачив
+                        // би "Опубліковано" в списку й не розумів, чому
+                        // на сайті запису ще нема.
+                        $isScheduled = $item['status'] === 'published'
+                            && !empty($item['publish_at'])
+                            && strtotime($item['publish_at']) > time();
+                    ?>
                     <div class="admin-list-item-header">
                         <strong><?php echo htmlspecialchars($item['title']); ?></strong>
                         <span class="admin-list-date">
-                            <?php echo htmlspecialchars($item['type']); ?> · <?php echo htmlspecialchars($item['status']); ?> · <?php echo htmlspecialchars($item['updated_at']); ?>
+                            <?php echo htmlspecialchars($item['type']); ?> ·
+                            <?php if ($isScheduled) : ?>
+                                <span class="badge-scheduled">Заплановано на <?php echo htmlspecialchars($item['publish_at']); ?></span>
+                            <?php else : ?>
+                                <?php echo htmlspecialchars($item['status']); ?>
+                            <?php endif; ?>
+                            · <?php echo htmlspecialchars($item['updated_at']); ?>
                         </span>
                     </div>
                     <p>/<?php echo htmlspecialchars($item['slug']); ?></p>

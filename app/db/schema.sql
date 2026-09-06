@@ -30,6 +30,12 @@ CREATE TABLE content (
     meta_description VARCHAR(500) NULL,
     body LONGTEXT,
     status ENUM('draft', 'published') NOT NULL DEFAULT 'draft',
+    -- NULL - публікується одразу, коли status='published'. Значення в
+    -- майбутньому - публічно видиме лише ПІСЛЯ настання цього часу
+    -- (публічні запити фільтрують publish_at <= NOW()), хоча
+    -- status уже 'published' - дозволяє підготувати запис заздалегідь,
+    -- не чіпаючи саму колонку status у день публікації.
+    publish_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_type_status (type, status)
@@ -92,4 +98,4 @@ INSERT INTO settings (setting_key, setting_value) VALUES
     -- Версія СХЕМИ БД (не версія коду!) - коли з'явиться апдейтер, він
     -- звірятиме це число й запускатиме тільки міграції новіші за нього,
     -- замість припущення "у всіх однакова структура таблиць".
-    ('schema_version', '8');
+    ('schema_version', '9');

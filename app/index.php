@@ -23,13 +23,13 @@ $siteName = get_setting($db, 'site_name', 'Nyxilum CMS');
 $path = trim(rawurldecode((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)), '/');
 
 if ($path === '') {
-    $items = $db->query("SELECT * FROM content WHERE status = 'published' ORDER BY updated_at DESC LIMIT 20")->fetchAll();
+    $items = $db->query('SELECT * FROM content WHERE ' . published_condition() . ' ORDER BY updated_at DESC LIMIT 20')->fetchAll();
     render('home', ['db' => $db, 'siteName' => $siteName, 'items' => $items]);
     exit;
 }
 
 if ($path === 'sitemap.xml') {
-    $items = $db->query("SELECT slug, updated_at FROM content WHERE status = 'published' ORDER BY updated_at DESC")->fetchAll();
+    $items = $db->query('SELECT slug, updated_at FROM content WHERE ' . published_condition() . ' ORDER BY updated_at DESC')->fetchAll();
     // Абсолютні URL будуються з реального хоста запиту, а не з окремого
     // "site_url" в налаштуваннях - так sitemap завжди правильний, хоч
     // локально, хоч на реальному домені, без ручного налаштування.
@@ -51,7 +51,7 @@ if ($path === 'sitemap.xml') {
 
 if ($path === 'feed.xml') {
     $items = $db->query(
-        "SELECT * FROM content WHERE type = 'post' AND status = 'published' ORDER BY updated_at DESC LIMIT 20"
+        "SELECT * FROM content WHERE type = 'post' AND " . published_condition() . ' ORDER BY updated_at DESC LIMIT 20'
     )->fetchAll();
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $base = $scheme . '://' . $_SERVER['HTTP_HOST'];
@@ -87,7 +87,7 @@ if ($path === 'search') {
     if ($query !== '') {
         $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $query) . '%';
         $stmt = $db->prepare(
-            "SELECT * FROM content WHERE status = 'published' AND (title LIKE ? OR body LIKE ?) ORDER BY updated_at DESC LIMIT 30"
+            'SELECT * FROM content WHERE ' . published_condition() . ' AND (title LIKE ? OR body LIKE ?) ORDER BY updated_at DESC LIMIT 30'
         );
         $stmt->execute([$like, $like]);
         $items = $stmt->fetchAll();
@@ -113,10 +113,10 @@ if (str_starts_with($path, 'category/')) {
     }
 
     $itemsStmt = $db->prepare(
-        "SELECT content.* FROM content
+        'SELECT content.* FROM content
          JOIN content_categories cc ON cc.content_id = content.id
-         WHERE cc.category_id = ? AND content.status = 'published'
-         ORDER BY content.updated_at DESC"
+         WHERE cc.category_id = ? AND ' . published_condition('content.') . '
+         ORDER BY content.updated_at DESC'
     );
     $itemsStmt->execute([$category['id']]);
     render('category', [
@@ -164,7 +164,7 @@ if (str_starts_with($path, 'preview/')) {
     exit;
 }
 
-$stmt = $db->prepare("SELECT * FROM content WHERE slug = ? AND status = 'published'");
+$stmt = $db->prepare('SELECT * FROM content WHERE slug = ? AND ' . published_condition());
 $stmt->execute([$path]);
 $item = $stmt->fetch();
 
