@@ -95,4 +95,4 @@ DB_HOST=127.0.0.1 DB_PORT=13309 DB_NAME=nyxilum_cms_test DB_USER=root DB_PASS=ro
 
 ## Статус
 
-Приватний, особистий проєкт. Ліцензія ще не обрана.
+Приватний, особистий проєкт. Ліцензія — MIT (`LICENSE`).
