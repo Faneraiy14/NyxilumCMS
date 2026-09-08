@@ -18,3 +18,4 @@
         </p>
     <?php endif; ?>
 </article>
+<?php require __DIR__ . '/comments-block.php'; ?>

@@ -5,6 +5,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../app/includes/db.php';
 require_once __DIR__ . '/../app/includes/categories.php';
+require_once __DIR__ . '/../app/includes/auth.php';
+require_once __DIR__ . '/../app/includes/site_auth.php';
+require_once __DIR__ . '/../app/includes/comments.php';
 
 // Тести реально пишуть/видаляють рядки (create/delete тестового
 // контенту, категорій і т.д.) у базі, на яку вказує поточне

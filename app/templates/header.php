@@ -55,5 +55,20 @@ $menuItems = $db->query('SELECT * FROM menu_items ORDER BY sort_order ASC, id AS
         <form method="get" action="/search" class="header-search">
             <input type="text" name="q" placeholder="Пошук…" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>">
         </form>
+        <?php
+            // Читається напряму з сесії (не через параметр render()) - на
+            // відміну від itemComments/siteUser, які render_content_item()
+            // передає лише сторінкам ОДНОГО запису, шапка рендериться на
+            // КОЖНІЙ сторінці (home/search/category/404 теж), тож не може
+            // покладатись на те, що виклик render() цього разу його передав.
+            $headerSiteUser = current_site_user();
+        ?>
+        <div class="site-account">
+            <?php if ($headerSiteUser) : ?>
+                <span><?php echo htmlspecialchars($headerSiteUser['username']); ?></span> · <a href="/logout">Вийти</a>
+            <?php else : ?>
+                <a href="/login">Увійти</a> · <a href="/register">Реєстрація</a>
+            <?php endif; ?>
+        </div>
     </header>
     <main class="site-main">

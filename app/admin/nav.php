@@ -6,6 +6,7 @@
     <a href="categories.php">Категорії</a>
     <a href="menu.php">Меню</a>
     <a href="media.php">Медіа</a>
+    <a href="comments.php">Коментарі</a>
     <?php if (current_role() === 'admin') : ?>
         <a href="settings.php">Налаштування</a>
         <a href="users.php">Користувачі</a>

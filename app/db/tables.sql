@@ -73,7 +73,26 @@ CREATE TABLE settings (
     setting_value TEXT
 );
 
+CREATE TABLE site_users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(64) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    content_id INT NOT NULL,
+    site_user_id INT NOT NULL,
+    body VARCHAR(2000) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE,
+    FOREIGN KEY (site_user_id) REFERENCES site_users(id) ON DELETE CASCADE,
+    INDEX idx_content (content_id, created_at)
+);
+
 INSERT INTO settings (setting_key, setting_value) VALUES
     ('site_name', 'Nyxilum CMS'),
     ('default_lang', 'uk'),
-    ('schema_version', '9');
+    ('schema_version', '10');

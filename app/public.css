@@ -80,3 +80,30 @@ a { color: var(--primary); }
 .not-found { text-align: center; padding: 60px 0; }
 .not-found h1 { font-size: 3rem; margin-bottom: 0; }
 .back-link { display: inline-block; margin-top: 20px; text-decoration: none; color: var(--muted); }
+
+.site-account { color: rgba(255,255,255,0.78); font-size: 0.85rem; display: flex; gap: 6px; align-items: center; }
+.site-account a { color: rgba(255,255,255,0.78); text-decoration: none; }
+.site-account a:hover { color: #fff; }
+
+.auth-form-page { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 32px; max-width: 420px; margin: 0 auto; }
+.auth-form { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
+.auth-form label { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; color: var(--muted); }
+.auth-form input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font: inherit; color: var(--text); }
+.auth-form button {
+  padding: 10px 20px; background: var(--primary); color: #fff;
+  border: none; border-radius: 8px; cursor: pointer; font: inherit; font-weight: 600;
+}
+.error { color: #b91c1c; background: #fef2f2; border-radius: 8px; padding: 10px 14px; }
+
+.comments { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); }
+.comment { background: var(--surface-alt); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+.comment-date { color: var(--muted); font-size: 0.8rem; margin-left: 8px; }
+.comment p { margin: 6px 0 0; }
+.comment-form { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.comment-form textarea { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font: inherit; min-height: 80px; resize: vertical; }
+.comment-form button {
+  align-self: flex-start; padding: 8px 18px; background: var(--primary); color: #fff;
+  border: none; border-radius: 8px; cursor: pointer; font: inherit; font-weight: 600;
+}
+.comment-as { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+.comment-login-hint { color: var(--muted); }
