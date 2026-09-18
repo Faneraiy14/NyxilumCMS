@@ -1,10 +1,10 @@
 <?php
-/** @var array $item трастований контент, редагується лише через адмінку.
+/** @var array<string, mixed> $item трастований контент, редагується лише через адмінку.
  * body тепер реальний HTML від Quill-редактора (не простий текст) -
  * виводимо як є, без htmlspecialchars/nl2br, інакше теги показались би
  * буквально замість форматування. Безпечно саме тому, що це поле пише
  * лише залогінений адмін через власну панель, не сторонній ввід.
- * @var array $itemCategories
+ * @var array<int, array<string, mixed>> $itemCategories
  */
 ?>
 <article class="page-content">

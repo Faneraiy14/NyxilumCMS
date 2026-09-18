@@ -49,3 +49,5 @@ jobs:
       - name: Import schema into the throwaway CI database
         run: mysql -h127.0.0.1 -uroot -proot nyxilum_cms_test < app/db/tables.sql
       - run: composer test
+      - name: PHPStan (level 6)
+        run: vendor/bin/phpstan analyse --no-progress

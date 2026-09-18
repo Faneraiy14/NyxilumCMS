@@ -1,5 +1,9 @@
 <?php
-/** @var array $items */
+/**
+ * @var array<int, array<string, mixed>> $items рядки з content (SELECT *
+ *   чи підмножина колонок, залежно від маршруту в index.php)
+ * @var string $siteName
+ */
 ?>
 <section class="hero">
     <h1><?php echo htmlspecialchars($siteName); ?></h1>

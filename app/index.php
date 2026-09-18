@@ -197,6 +197,7 @@ if (str_starts_with($path, 'category/')) {
 // інакше типовий page.php. preg_match тут не про "недовіру адміну" (тип
 // вводить тільки він сам), а щоб не отримати шлях за межі templates/,
 // навіть від довіреного джерела - дешева перестраховка.
+/** @param array<string, mixed> $item */
 function render_content_item(PDO $db, string $siteName, array $item, bool $isPreview = false): void
 {
     $template = 'page';

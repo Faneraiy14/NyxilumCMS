@@ -1,5 +1,5 @@
 <?php
-/** @var array $items
+/** @var array<int, array<string, mixed>> $items
  *  @var string $query
  */
 ?>

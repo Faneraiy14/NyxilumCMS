@@ -1,7 +1,7 @@
 <?php
-/** @var array $item
- *  @var array $itemComments список коментарів (username/body/created_at)
- *  @var array|null $siteUser поточний залогінений відвідувач, якщо є
+/** @var array<string, mixed> $item
+ *  @var array<int, array<string, mixed>> $itemComments список коментарів (username/body/created_at)
+ *  @var array<string, mixed>|null $siteUser поточний залогінений відвідувач, якщо є
  *
  *  Спільний партиал для page.php і type-post.php - той самий блок
  *  коментарів під будь-яким типом контенту, без дублювання розмітки.

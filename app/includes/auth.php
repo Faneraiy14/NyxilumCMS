@@ -84,6 +84,15 @@ function attempt_login(string $username, string $password): string
     return 'ok';
 }
 
+/**
+ * Читає з $_SESSION, а на таймауті САМА чистить pending-стан
+ * (clear_pending_2fa()) - два виклики поспіль можуть дати РІЗНИЙ
+ * результат (напр. verify-2fa.php: другий виклик після невдалої
+ * verify_2fa_code(), яка сама могла щойно вичерпати ліміт спроб і
+ * скинути pending-стан) - не чиста функція.
+ *
+ * @phpstan-impure
+ */
 function has_pending_2fa(): bool
 {
     start_admin_session();

@@ -1,0 +1,15 @@
+parameters:
+    # Рівень 6, НЕ max - на рівні 7+ PHPStan дає ~40 помилок класу
+    # "PDOStatement|false", бо не знає, що includes/db.php вмикає
+    # PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION (query()/execute()
+    # ніколи реально не повертають false - кидають виняток замість
+    # цього). Це фальш-спрацювання, не реальні баги - виправляти їх
+    # довелось би або власним phpstan-розширенням (dynamic return type
+    # extension), або десятками однакових ручних перевірок по всьому
+    # коду. Рівень 6 - найвищий, де кожна знахідка реальна (той самий
+    # підхід, що рівень 4 у OpenSourceBikeShare - не форсований max).
+    level: 6
+    paths:
+        - app
+    excludePaths:
+        - app/uploads/*

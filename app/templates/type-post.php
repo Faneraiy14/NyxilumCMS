@@ -1,8 +1,8 @@
 <?php
-/** @var array $item трастований контент, редагується лише через адмінку
+/** @var array<string, mixed> $item трастований контент, редагується лише через адмінку
  *  Відрізняється від звичайного page.php: показує дату публікації,
  *  типовий вигляд для "блог-запису" замість статичної сторінки.
- * @var array $itemCategories
+ * @var array<int, array<string, mixed>> $itemCategories
  */
 ?>
 <article class="page-content post-content">

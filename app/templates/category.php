@@ -1,7 +1,9 @@
 <?php
 /**
- * @var array $category {id, name, slug, description}
- * @var array $items опубліковані записи цієї категорії
+ * @var array<string, mixed> $category рядок з categories (SELECT *) -
+ *   {id, name, slug, description}
+ * @var array<int, array<string, mixed>> $items опубліковані записи цієї категорії
+ * @var string $siteName
  */
 ?>
 <section class="hero">

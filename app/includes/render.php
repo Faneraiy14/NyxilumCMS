@@ -12,6 +12,7 @@ function get_setting(PDO $db, string $key, string $default = ''): string
     return $cache[$key] ?? $default;
 }
 
+/** @param array<string, mixed> $vars */
 function render(string $template, array $vars = []): void
 {
     extract($vars);
