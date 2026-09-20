@@ -13,3 +13,5 @@ parameters:
         - app
     excludePaths:
         - app/uploads/*
+    bootstrapFiles:
+        - phpstan-bootstrap.php
