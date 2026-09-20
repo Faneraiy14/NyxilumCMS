@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/csrf.php';
 
 start_admin_session();
 
@@ -16,6 +17,8 @@ if (has_pending_2fa()) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
+
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
@@ -42,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="login-page">
     <form class="login-form" method="post" action="login.php">
+        <?php echo csrf_field(); ?>
         <h1>Nyxilum CMS</h1>
 
         <?php if ($error !== '') : ?>

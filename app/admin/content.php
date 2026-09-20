@@ -169,7 +169,7 @@ $items = $stmt->fetchAll();
             </label>
 
             <label>
-                Категорії
+                Категорії (необов'язково - групування записів для архівних сторінок сайту, сторінку можна зберегти й без жодної)
                 <div class="checkbox-list">
                     <?php foreach ($allCategories as $cat) : ?>
                         <label class="checkbox-item">
@@ -179,7 +179,7 @@ $items = $stmt->fetchAll();
                         </label>
                     <?php endforeach; ?>
                     <?php if (!$allCategories) : ?>
-                        <span class="admin-list-empty">Категорій ще немає - можна <a href="categories.php">створити тут</a>.</span>
+                        <span class="admin-list-empty">Немає жодної - і не обов'язково створювати. Хочеш категорії - можна <a href="categories.php">завести тут</a>.</span>
                     <?php endif; ?>
                 </div>
             </label>

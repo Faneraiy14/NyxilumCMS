@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/csrf.php';
 
 start_admin_session();
 
@@ -16,6 +17,8 @@ if (!has_pending_2fa()) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
+
     $code = trim($_POST['code'] ?? '');
 
     if (verify_2fa_code($code)) {
@@ -38,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="login-page">
     <form class="login-form" method="post" action="verify-2fa.php">
+        <?php echo csrf_field(); ?>
         <h1>Nyxilum CMS</h1>
         <p>Введи код з додатка-автентифікатора.</p>
 

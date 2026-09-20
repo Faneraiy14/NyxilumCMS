@@ -15,5 +15,6 @@
         <a href="import.php">Імпорт</a>
     <?php endif; ?>
     <a href="2fa.php">2FA</a>
+    <a href="help.php">Довідка</a>
     <a href="logout.php" class="admin-nav-logout">Вийти</a>
 </nav>
