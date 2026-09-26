@@ -1,0 +1,35 @@
+# Front controller: реальні файли (public.css, admin/login.php, ...)
+# віддаються як є, усе інше йде через index.php - той самий router,
+# що вбудований сервер (`php -S`) робить сам через PHP_SAPI==='cli-server'
+# у index.php. Без цього файлу на звичайному Apache-хостингу будь-який
+# "красивий" URL (slug сторінки/запису) повертав би 404 - реальна
+# прогалина, знайдена 26.09.2026 при розгортанні на реальний хостинг
+# (my-hub.luchezarikcentr.com).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.php [L]
+</IfModule>
+
+# Заголовки безпеки, безумовно - лише для HTTPS-хостингу (якщо сайт
+# на HTTP, прибери рядок Strict-Transport-Security нижче).
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# config.php - реальні дані підключення до БД. Ніколи не повинен
+# віддаватись як текст, навіть якщо хтось вгадає прямий шлях.
+<Files "config.php">
+    Require all denied
+</Files>
+
+# includes/*.php не мають власного виводу (лише функції/константи) і
+# ніколи не мають відкриватись напряму через URL - лише через require
+# з index.php/admin/*.php.
+<IfModule mod_rewrite.c>
+  RewriteRule ^includes/ - [F,L]
+</IfModule>
