@@ -23,8 +23,18 @@
 
 # config.php - реальні дані підключення до БД. Ніколи не повинен
 # віддаватись як текст, навіть якщо хтось вгадає прямий шлях.
+# "Require" - синтаксис mod_authz_core (Apache 2.4+); без IfModule на
+# старішому Apache/без цього модуля невідома директива валить сайт
+# у 500 одразу (реальний баг, спіймано 26.09.2026 на живому хостингу
+# my-hub - перший деплой цього .htaccess через CI дав чистий 500).
 <Files "config.php">
-    Require all denied
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
 </Files>
 
 # includes/*.php не мають власного виводу (лише функції/константи) і
