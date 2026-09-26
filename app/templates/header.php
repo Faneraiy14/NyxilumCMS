@@ -60,6 +60,7 @@ $langSwitchHref = '/set-lang?to=' . $targetLang . '&return=' . rawurlencode('/')
     <?php if (!empty($metaDescription)): ?>
     <meta name="twitter:description" content="<?php echo htmlspecialchars($metaDescription); ?>">
     <?php endif; ?>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/public.css">
 </head>
 <body>
