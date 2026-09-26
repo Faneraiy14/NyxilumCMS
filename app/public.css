@@ -15,9 +15,44 @@ a { color: var(--primary); }
 
 .site-header { padding: 20px 32px; background: #0f172a; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
 .site-title { font-weight: 700; font-size: 1.1rem; color: #fff; text-decoration: none; margin-right: auto; }
-.site-nav { display: flex; gap: 18px; flex-wrap: wrap; }
-.site-nav a { color: rgba(255, 255, 255, 0.78); text-decoration: none; font-size: 0.95rem; }
-.site-nav a:hover { color: #fff; }
+
+/* Бургер-меню (26.09.2026, перенесено з my-hub) - .site-nav ЗАВЖДИ
+   слайд-панель (не лише на мобільних) - той самий підхід, що вже
+   довів себе в my-hub, простіше за окрему desktop/mobile-розкладку. */
+.menu-toggle {
+  display: flex; flex-direction: column; justify-content: center; gap: 5px;
+  background: none; border: none; cursor: pointer; padding: 8px;
+}
+.menu-toggle span { display: block; width: 22px; height: 3px; background: #fff; border-radius: 2px; }
+
+.site-nav {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+  background: var(--surface); box-shadow: var(--shadow);
+  padding: 24px; padding-top: 84px;
+  display: flex; flex-direction: column; gap: 4px;
+  transform: translateX(-100%); transition: transform 0.25s ease;
+  z-index: 100; overflow-y: auto;
+}
+.site-nav.is-open { transform: translateX(0); }
+.site-nav a {
+  color: var(--text); text-decoration: none; font-size: 0.95rem;
+  padding: 10px 12px; border-radius: 8px; font-weight: 600;
+}
+.site-nav a:hover { background: var(--surface-alt); color: var(--primary); }
+
+.nav-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15, 23, 42, 0.4); z-index: 99;
+}
+.nav-overlay.is-open { display: block; }
+
+.lang-switch { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+.lang-switch a {
+  display: inline-block; color: var(--muted); text-decoration: none;
+  font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 12px;
+}
+.lang-switch a:hover { color: var(--primary); border-color: var(--primary); }
 
 .header-search input {
   background: rgba(255,255,255,0.12);

@@ -14,16 +14,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $label = trim($_POST['label'] ?? '');
         $url = trim($_POST['url'] ?? '');
         $sortOrder = (int) ($_POST['sort_order'] ?? 0);
+        // Порожній вибір у формі -> NULL (показувати на будь-якій мові) -
+        // не порожній рядок, щоб збігтись з "lang IS NULL" у header.php.
+        $lang = trim($_POST['lang'] ?? '');
+        $lang = $lang === '' ? null : $lang;
 
         if ($label !== '' && $url !== '') {
             if ($action === 'create') {
-                $stmt = $db->prepare('INSERT INTO menu_items (label, url, sort_order) VALUES (?, ?, ?)');
-                $stmt->execute([$label, $url, $sortOrder]);
+                $stmt = $db->prepare('INSERT INTO menu_items (label, url, sort_order, lang) VALUES (?, ?, ?, ?)');
+                $stmt->execute([$label, $url, $sortOrder, $lang]);
                 log_activity('create', 'menu_item', (int) $db->lastInsertId(), $label);
             } else {
                 $id = (int) ($_POST['id'] ?? 0);
-                $stmt = $db->prepare('UPDATE menu_items SET label = ?, url = ?, sort_order = ? WHERE id = ?');
-                $stmt->execute([$label, $url, $sortOrder, $id]);
+                $stmt = $db->prepare('UPDATE menu_items SET label = ?, url = ?, sort_order = ?, lang = ? WHERE id = ?');
+                $stmt->execute([$label, $url, $sortOrder, $lang, $id]);
                 log_activity('update', 'menu_item', $id, $label);
             }
         }
@@ -84,6 +88,15 @@ $items = $db->query('SELECT * FROM menu_items ORDER BY sort_order ASC, id ASC')-
                 <input type="number" name="sort_order" value="<?php echo (int) ($editItem['sort_order'] ?? 0); ?>">
             </label>
 
+            <label>
+                Мова (порожньо — показувати на будь-якій, напр. для зовнішніх посилань)
+                <select name="lang">
+                    <option value="" <?php echo ($editItem['lang'] ?? '') === '' || ($editItem['lang'] ?? null) === null ? 'selected' : ''; ?>>Будь-яка</option>
+                    <option value="uk" <?php echo ($editItem['lang'] ?? '') === 'uk' ? 'selected' : ''; ?>>Українська</option>
+                    <option value="en" <?php echo ($editItem['lang'] ?? '') === 'en' ? 'selected' : ''; ?>>English</option>
+                </select>
+            </label>
+
             <button type="submit"><?php echo $editItem ? 'Зберегти зміни' : 'Додати пункт'; ?></button>
             <?php if ($editItem) : ?>
                 <a href="menu.php" class="cancel-link">Скасувати</a>
@@ -95,7 +108,7 @@ $items = $db->query('SELECT * FROM menu_items ORDER BY sort_order ASC, id ASC')-
                 <li>
                     <div class="admin-list-item-header">
                         <strong><?php echo htmlspecialchars($item['label']); ?></strong>
-                        <span class="admin-list-date"><?php echo htmlspecialchars($item['url']); ?> · #<?php echo (int) $item['sort_order']; ?></span>
+                        <span class="admin-list-date"><?php echo htmlspecialchars($item['url']); ?> · #<?php echo (int) $item['sort_order']; ?> · <?php echo htmlspecialchars($item['lang'] ?? 'будь-яка мова'); ?></span>
                     </div>
                     <div class="admin-list-actions">
                         <a href="menu.php?edit=<?php echo (int) $item['id']; ?>">Редагувати</a>

@@ -45,7 +45,8 @@ CREATE TABLE menu_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     label VARCHAR(255) NOT NULL,
     url VARCHAR(255) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0
+    sort_order INT NOT NULL DEFAULT 0,
+    lang VARCHAR(8) NULL
 );
 
 CREATE TABLE media (

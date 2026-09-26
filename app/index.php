@@ -23,11 +23,41 @@ if (!is_installed()) {
 $db = get_db();
 $siteName = get_setting($db, 'site_name', 'Nyxilum CMS');
 
+// Справжній перемикач мови (26.09.2026, перенесено з my-hub) - кука
+// LANG_COOKIE, не сесія (переживає закриття браузера, той самий вибір
+// без повторного логіну). Індивідуальні сторінки контенту (нижче,
+// render_content_item) переозначають $currentLang власним item['lang'] -
+// заголовок сторінки МАЄ відповідати мові самого контенту, а не тому,
+// що показувалось на попередній сторінці.
+const LANG_COOKIE = 'nyxilum_lang';
+$currentLang = $_COOKIE[LANG_COOKIE] ?? get_setting($db, 'default_lang', 'uk');
+
 $path = trim(rawurldecode((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)), '/');
 
+if ($path === 'set-lang') {
+    $to = (string) ($_GET['to'] ?? '');
+    $to = preg_match('/^[a-z]{2}$/', $to) ? $to : 'uk';
+    setcookie(LANG_COOKIE, $to, [
+        'expires' => time() + 60 * 60 * 24 * 365,
+        'path' => '/',
+        'samesite' => 'Lax',
+    ]);
+
+    // Локальний шлях, ніколи чужий хост - "//evil.com" браузер читає
+    // як protocol-relative URL, тож окремо блокуємо саме цей випадок,
+    // не лише перший символ (той самий захист, що вже був у my-hub).
+    $return = (string) ($_GET['return'] ?? '/');
+    if ($return === '' || $return[0] !== '/' || str_starts_with($return, '//') || str_contains($return, '\\')) {
+        $return = '/';
+    }
+    header('Location: ' . $return, true, 302);
+    exit;
+}
+
 if ($path === '') {
-    $items = $db->query('SELECT * FROM content WHERE ' . published_condition() . ' ORDER BY updated_at DESC LIMIT 20')->fetchAll();
-    render('home', ['db' => $db, 'siteName' => $siteName, 'items' => $items]);
+    $stmt = $db->prepare('SELECT * FROM content WHERE lang = ? AND ' . published_condition() . ' ORDER BY updated_at DESC LIMIT 20');
+    $stmt->execute([$currentLang]);
+    render('home', ['db' => $db, 'siteName' => $siteName, 'currentLang' => $currentLang, 'currentPath' => '', 'items' => $stmt->fetchAll()]);
     exit;
 }
 
@@ -90,13 +120,13 @@ if ($path === 'search') {
     if ($query !== '') {
         $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $query) . '%';
         $stmt = $db->prepare(
-            'SELECT * FROM content WHERE ' . published_condition() . ' AND (title LIKE ? OR body LIKE ?) ORDER BY updated_at DESC LIMIT 30'
+            'SELECT * FROM content WHERE lang = ? AND ' . published_condition() . ' AND (title LIKE ? OR body LIKE ?) ORDER BY updated_at DESC LIMIT 30'
         );
-        $stmt->execute([$like, $like]);
+        $stmt->execute([$currentLang, $like, $like]);
         $items = $stmt->fetchAll();
     }
     render('search', [
-        'db' => $db, 'siteName' => $siteName,
+        'db' => $db, 'siteName' => $siteName, 'currentLang' => $currentLang, 'currentPath' => 'search',
         'pageTitle' => 'Пошук' . ($query !== '' ? ": {$query}" : '') . " — {$siteName}",
         'query' => $query, 'items' => $items,
     ]);
@@ -117,7 +147,7 @@ if ($path === 'register') {
         }
     }
     render('register', [
-        'db' => $db, 'siteName' => $siteName,
+        'db' => $db, 'siteName' => $siteName, 'currentLang' => $currentLang, 'currentPath' => 'register',
         'pageTitle' => "Реєстрація — {$siteName}", 'error' => $error,
     ]);
     exit;
@@ -134,7 +164,7 @@ if ($path === 'login') {
         $error = 'Невірний логін/email або пароль.';
     }
     render('account-login', [
-        'db' => $db, 'siteName' => $siteName,
+        'db' => $db, 'siteName' => $siteName, 'currentLang' => $currentLang, 'currentPath' => 'login',
         'pageTitle' => "Вхід — {$siteName}", 'error' => $error,
     ]);
     exit;
@@ -173,19 +203,19 @@ if (str_starts_with($path, 'category/')) {
 
     if (!$category) {
         http_response_code(404);
-        render('404', ['db' => $db, 'siteName' => $siteName]);
+        render('404', ['db' => $db, 'siteName' => $siteName, 'currentLang' => $currentLang, 'currentPath' => $path]);
         exit;
     }
 
     $itemsStmt = $db->prepare(
         'SELECT content.* FROM content
          JOIN content_categories cc ON cc.content_id = content.id
-         WHERE cc.category_id = ? AND ' . published_condition('content.') . '
+         WHERE cc.category_id = ? AND content.lang = ? AND ' . published_condition('content.') . '
          ORDER BY content.updated_at DESC'
     );
-    $itemsStmt->execute([$category['id']]);
+    $itemsStmt->execute([$category['id'], $currentLang]);
     render('category', [
-        'db' => $db, 'siteName' => $siteName,
+        'db' => $db, 'siteName' => $siteName, 'currentLang' => $currentLang, 'currentPath' => $path,
         'pageTitle' => $category['name'] . ' — ' . $siteName,
         'category' => $category, 'items' => $itemsStmt->fetchAll(),
     ]);
@@ -206,6 +236,13 @@ function render_content_item(PDO $db, string $siteName, array $item, bool $isPre
     }
     render($template, [
         'db' => $db, 'siteName' => $siteName,
+        // Мова сторінки - це мова САМОГО запису (item['lang']), не кука
+        // відвідувача - слаг про-мене/about-me вже мовно-специфічний,
+        // <html lang="..."> має відповідати РЕАЛЬНОМУ вмісту. Перемикач
+        // мови (header.php) на такій сторінці веде на головну цільової
+        // мови - v1 свідомо без пошуку "сусіднього" перекладу за
+        // конкретним slug'ом (немає зв'язку між рядками content у схемі).
+        'currentLang' => $item['lang'], 'currentPath' => $item['slug'],
         'pageTitle' => ($isPreview ? '[Чернетка] ' : '') . ($item['meta_title'] ?: $item['title']) . ' — ' . $siteName,
         'metaDescription' => $item['meta_description'] ?? '',
         'item' => $item,
@@ -225,7 +262,7 @@ if (str_starts_with($path, 'preview/')) {
     $item = $stmt->fetch();
     if (!$item) {
         http_response_code(404);
-        render('404', ['db' => $db, 'siteName' => $siteName]);
+        render('404', ['db' => $db, 'siteName' => $siteName, 'currentLang' => $currentLang, 'currentPath' => $path]);
         exit;
     }
     render_content_item($db, $siteName, $item, true);
@@ -242,4 +279,4 @@ if ($item) {
 }
 
 http_response_code(404);
-render('404', ['db' => $db, 'siteName' => $siteName]);
+render('404', ['db' => $db, 'siteName' => $siteName, 'currentLang' => $currentLang, 'currentPath' => $path]);

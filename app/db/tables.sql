@@ -28,7 +28,12 @@ CREATE TABLE menu_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     label VARCHAR(255) NOT NULL,
     url VARCHAR(255) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0
+    sort_order INT NOT NULL DEFAULT 0,
+    -- NULL = показувати на БУДЬ-якій мові (зовнішні посилання типу
+    -- GitHub/Telegram - їм мова не потрібна). Конкретне значення
+    -- ('uk'/'en') - лише коли поточна мова відвідувача збігається
+    -- (26.09.2026, справжній перемикач мови).
+    lang VARCHAR(8) NULL
 );
 
 CREATE TABLE media (
