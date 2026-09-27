@@ -8,10 +8,13 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Акаунти відвідувачів (реєстрація/вхід) і коментарі - геть окрема
- * система від admin_users/auth.php (Sviatoslav: "реєстрація коментарі
- * потрібно зробити в моїй CMS", раніше floated "третю роль" в самій
- * адмінці й сам відхилив цю ідею - це не те саме).
+ * Об'єднана система акаунтів (27.09.2026) - звичайні відвідувачі
+ * (реєстрація/вхід/коментарі) тепер теж рядки в admin_users, з роллю
+ * 'user', а не окрема таблиця site_users. Причина зміни: власник сайту
+ * хотів мати змогу "підвищити" зареєстрованого відвідувача до editor/
+ * admin - неможливо, якщо це справді геть окрема таблиця без жодного
+ * зв'язку з ролями (див. коментар, який був тут раніше - явно
+ * протилежне рішення від 05.09.2026, свідомо переглянуте зараз).
  */
 final class SiteUsersAndCommentsTest extends TestCase
 {
@@ -34,82 +37,84 @@ final class SiteUsersAndCommentsTest extends TestCase
     {
         $this->db->prepare('DELETE FROM comments WHERE content_id = ?')->execute([$this->contentId]);
         $this->db->prepare('DELETE FROM content WHERE id = ?')->execute([$this->contentId]);
-        $this->db->prepare("DELETE FROM site_users WHERE username LIKE '__phpunit_test_%'")->execute();
+        $this->db->prepare("DELETE FROM admin_users WHERE username LIKE '__phpunit_test_%'")->execute();
         $_SESSION = [];
     }
 
-    public function testSiteRegisterRejectsAShortPassword(): void
+    public function testRegisterAccountRejectsAShortPassword(): void
     {
-        $error = site_register('__phpunit_test_user__', 'phpunit@example.com', 'short');
+        $error = register_account('__phpunit_test_user__', 'short');
         $this->assertNotSame('', $error);
 
-        $stmt = $this->db->prepare('SELECT COUNT(*) FROM site_users WHERE username = ?');
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM admin_users WHERE username = ?');
         $stmt->execute(['__phpunit_test_user__']);
         $this->assertSame(0, (int) $stmt->fetchColumn());
     }
 
-    public function testSiteRegisterRejectsAnInvalidEmail(): void
+    public function testRegisterAccountRejectsAUsernameWithDisallowedCharacters(): void
     {
-        $error = site_register('__phpunit_test_user__', 'not-an-email', 'irrelevant123');
+        $error = register_account('bad name!', 'irrelevant123');
         $this->assertNotSame('', $error);
     }
 
-    public function testSiteRegisterRejectsAUsernameWithDisallowedCharacters(): void
+    public function testRegisterAccountCreatesTheAccountWithRoleUserAndLogsIn(): void
     {
-        $error = site_register('bad name!', 'phpunit@example.com', 'irrelevant123');
-        $this->assertNotSame('', $error);
-    }
-
-    public function testSiteRegisterCreatesTheAccountAndLogsIn(): void
-    {
-        $error = site_register('__phpunit_test_user__', 'phpunit@example.com', 'RealPassword123');
+        $error = register_account('__phpunit_test_user__', 'RealPassword123');
 
         $this->assertSame('', $error);
-        $this->assertNotNull(current_site_user());
-        $this->assertSame('__phpunit_test_user__', current_site_user()['username']);
+        $this->assertNotNull(current_account());
+        $this->assertSame('__phpunit_test_user__', current_account()['username']);
+        $this->assertSame('user', current_account()['role']);
+
+        // Регресійний тест на реальну вимогу: самостійна реєстрація
+        // НІКОЛИ не дає admin/editor, хай там що прийшло б у запиті -
+        // register_account() навіть не приймає роль параметром.
+        $stmt = $this->db->prepare('SELECT role FROM admin_users WHERE username = ?');
+        $stmt->execute(['__phpunit_test_user__']);
+        $this->assertSame('user', $stmt->fetchColumn());
     }
 
-    public function testSiteRegisterTwiceWithTheSameUsernameFails(): void
+    public function testRegisterAccountTwiceWithTheSameUsernameFails(): void
     {
-        site_register('__phpunit_test_user__', 'first@example.com', 'RealPassword123');
+        register_account('__phpunit_test_user__', 'RealPassword123');
         $_SESSION = [];
 
-        $error = site_register('__phpunit_test_user__', 'second@example.com', 'RealPassword123');
+        $error = register_account('__phpunit_test_user__', 'RealPassword123');
 
         $this->assertNotSame('', $error);
     }
 
-    public function testSiteAttemptLoginWithTheWrongPasswordFails(): void
+    public function testAttemptLoginWithTheWrongPasswordFails(): void
     {
-        site_register('__phpunit_test_user__', 'phpunit@example.com', 'RealPassword123');
-        site_logout();
+        register_account('__phpunit_test_user__', 'RealPassword123');
+        logout();
 
-        $this->assertFalse(site_attempt_login('__phpunit_test_user__', 'wrong-password'));
-        $this->assertNull(current_site_user());
+        $this->assertSame('fail', attempt_login('__phpunit_test_user__', 'wrong-password'));
+        $this->assertNull(current_account());
     }
 
-    public function testSiteAttemptLoginByEmailWorksTooNotJustUsername(): void
+    public function testAttemptLoginWithTheRightPasswordSucceeds(): void
     {
-        site_register('__phpunit_test_user__', 'phpunit@example.com', 'RealPassword123');
-        site_logout();
+        register_account('__phpunit_test_user__', 'RealPassword123');
+        logout();
 
-        $this->assertTrue(site_attempt_login('phpunit@example.com', 'RealPassword123'));
-        $this->assertSame('__phpunit_test_user__', current_site_user()['username']);
+        $this->assertSame('ok', attempt_login('__phpunit_test_user__', 'RealPassword123'));
+        $this->assertSame('__phpunit_test_user__', current_account()['username']);
     }
 
-    public function testSiteLogoutClearsTheSession(): void
+    public function testLogoutClearsTheSession(): void
     {
-        site_register('__phpunit_test_user__', 'phpunit@example.com', 'RealPassword123');
+        register_account('__phpunit_test_user__', 'RealPassword123');
 
-        site_logout();
+        logout();
 
-        $this->assertNull(current_site_user());
+        $this->assertNull(current_account());
     }
 
     public function testAddCommentRejectsAnEmptyBody(): void
     {
-        site_register('__phpunit_test_user__', 'phpunit@example.com', 'RealPassword123');
-        $userId = current_site_user()['id'];
+        register_account('__phpunit_test_user__', 'RealPassword123');
+        $userId = current_account()['id'];
 
         $error = add_comment($this->db, $this->contentId, $userId, '   ');
 
@@ -119,8 +124,8 @@ final class SiteUsersAndCommentsTest extends TestCase
 
     public function testAddCommentThenGetCommentsForContentReturnsItWithTheUsername(): void
     {
-        site_register('__phpunit_test_user__', 'phpunit@example.com', 'RealPassword123');
-        $userId = current_site_user()['id'];
+        register_account('__phpunit_test_user__', 'RealPassword123');
+        $userId = current_account()['id'];
 
         $error = add_comment($this->db, $this->contentId, $userId, 'Реальний коментар PHPUnit.');
 
@@ -132,17 +137,19 @@ final class SiteUsersAndCommentsTest extends TestCase
     }
 
     /**
-     * Регресійний тест на реальну поведінку схеми: comments.site_user_id
-     * має ON DELETE CASCADE - видалення акаунта відвідувача забирає й
-     * усі його коментарі, а не лишає "осиротілі" рядки.
+     * Регресійний тест на реальну поведінку схеми: comments.user_id
+     * має ON DELETE CASCADE - видалення акаунта забирає й усі його
+     * коментарі, а не лишає "осиротілі" рядки. Той самий тест, що був
+     * для site_users - тепер проти admin_users (спільна таблиця для
+     * акаунтів усіх ролей).
      */
-    public function testDeletingASiteUserCascadesTheirComments(): void
+    public function testDeletingAnAccountCascadesTheirComments(): void
     {
-        site_register('__phpunit_test_user__', 'phpunit@example.com', 'RealPassword123');
-        $userId = current_site_user()['id'];
+        register_account('__phpunit_test_user__', 'RealPassword123');
+        $userId = current_account()['id'];
         add_comment($this->db, $this->contentId, $userId, 'Коментар, що має зникнути.');
 
-        $this->db->prepare('DELETE FROM site_users WHERE id = ?')->execute([$userId]);
+        $this->db->prepare('DELETE FROM admin_users WHERE id = ?')->execute([$userId]);
 
         $this->assertSame([], get_comments_for_content($this->db, $this->contentId));
     }
