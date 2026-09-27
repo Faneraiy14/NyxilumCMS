@@ -163,8 +163,17 @@ $items = $stmt->fetchAll();
 
             <label>
                 Вміст
+                <button type="button" id="htmlSourceToggle" class="cancel-link" style="margin-bottom:6px;">📝 Джерело HTML</button>
                 <div id="editor-toolbar"></div>
                 <div id="editor-content"></div>
+                <!-- Перемикається htmlSourceToggle нижче - готовий HTML (напр.
+                     згенерований AI чи скопійований з іншого сайту) можна
+                     вставити СЮДИ напряму текстом, без спотворення у "<p>...
+                     </p>" буквальними тегами - той самий баг, що стається,
+                     коли вставляєш сирий HTML напряму в Quill (WYSIWYG чекає
+                     вже відформатований HTML із буфера обміну, а не текст із
+                     символами "<", ">"). -->
+                <textarea id="html-source" style="display:none; width:100%; min-height:200px; font-family:monospace; font-size:13px;"></textarea>
                 <textarea name="body" id="body-field" style="display:none;"><?php echo htmlspecialchars($editItem['body'] ?? ''); ?></textarea>
             </label>
 
@@ -281,8 +290,43 @@ $items = $stmt->fetchAll();
         if (bodyField.value) {
             quill.root.innerHTML = bodyField.value;
         }
+
+        // Перемикач "Джерело HTML" - показує/ховає сирий textarea з тим
+        // самим вмістом, що зараз у Quill, у вигляді HTML-тексту. На
+        // відміну від вставки в саму панель Quill (яка очікує вже
+        // відформатований HTML із буфера обміну і псує сирий текст із
+        // тегами), тут можна вписати/вставити HTML напряму - при
+        // перемиканні НАЗАД у Quill quill.root.innerHTML коректно розбирає
+        // справжні теги (той самий шлях, що вже працює при завантаженні
+        // збереженої сторінки вище).
+        const toolbar = document.querySelector('#editor-content').previousElementSibling; // .ql-toolbar, Quill сам вставив
+        const editorEl = document.getElementById('editor-content');
+        const sourceEl = document.getElementById('html-source');
+        const toggleBtn = document.getElementById('htmlSourceToggle');
+        let sourceMode = false;
+
+        toggleBtn.addEventListener('click', () => {
+            if (!sourceMode) {
+                sourceEl.value = quill.root.innerHTML;
+                if (toolbar) toolbar.style.display = 'none';
+                editorEl.style.display = 'none';
+                sourceEl.style.display = 'block';
+                toggleBtn.textContent = '🖊️ Звичайний редактор';
+            } else {
+                quill.root.innerHTML = sourceEl.value;
+                sourceEl.style.display = 'none';
+                if (toolbar) toolbar.style.display = '';
+                editorEl.style.display = '';
+                toggleBtn.textContent = '📝 Джерело HTML';
+            }
+            sourceMode = !sourceMode;
+        });
+
         document.querySelector('.admin-form').addEventListener('submit', () => {
-            bodyField.value = quill.root.innerHTML;
+            // Якщо форму зберігають прямо з режиму "Джерело HTML" (не
+            // перемкнувшись назад) - беремо значення звідти напряму, а не
+            // застарілий quill.root.innerHTML з моменту ДО перемикання.
+            bodyField.value = sourceMode ? sourceEl.value : quill.root.innerHTML;
         });
     </script>
 </body>
