@@ -3,7 +3,6 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/render.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/categories.php';
-require_once __DIR__ . '/includes/site_auth.php';
 require_once __DIR__ . '/includes/comments.php';
 require_once __DIR__ . '/includes/csrf.php';
 
@@ -133,59 +132,22 @@ if ($path === 'search') {
     exit;
 }
 
-// Акаунти відвідувачів (реєстрація/вхід/вихід/коментарі) - геть окрема
-// система від admin_users (includes/site_auth.php), той самий PHP-
-// сеанс, свій ключ site_user_id.
-if ($path === 'register') {
-    $error = '';
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        csrf_verify();
-        $error = site_register((string) ($_POST['username'] ?? ''), (string) ($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''));
-        if ($error === '') {
-            header('Location: /');
-            exit;
-        }
-    }
-    render('register', [
-        'db' => $db, 'siteName' => $siteName, 'currentLang' => $currentLang, 'currentPath' => 'register',
-        'pageTitle' => "Реєстрація — {$siteName}", 'error' => $error,
-    ]);
-    exit;
-}
-
-if ($path === 'login') {
-    $error = '';
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        csrf_verify();
-        if (site_attempt_login((string) ($_POST['username'] ?? ''), (string) ($_POST['password'] ?? ''))) {
-            header('Location: /');
-            exit;
-        }
-        $error = 'Невірний логін/email або пароль.';
-    }
-    render('account-login', [
-        'db' => $db, 'siteName' => $siteName, 'currentLang' => $currentLang, 'currentPath' => 'login',
-        'pageTitle' => "Вхід — {$siteName}", 'error' => $error,
-    ]);
-    exit;
-}
-
-if ($path === 'logout') {
-    site_logout();
-    header('Location: /');
-    exit;
-}
+// Об'єднана система акаунтів (27.09.2026) - реєстрація/вхід/вихід тепер
+// живуть в admin/register.php/admin/login.php/admin/logout.php (та сама
+// admin_users, роль 'user' для звичайних відвідувачів) - не окремі
+// маршрути тут. Лишається лише 'comment', бо він специфічний для
+// публічної частини сайту.
 
 if ($path === 'comment' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
-    $siteUser = current_site_user();
+    $siteUser = current_account();
     $contentId = (int) ($_POST['content_id'] ?? 0);
     $stmt = $db->prepare('SELECT slug FROM content WHERE id = ?');
     $stmt->execute([$contentId]);
     $slug = $stmt->fetchColumn();
 
     if ($siteUser === null) {
-        header('Location: /login');
+        header('Location: /admin/login.php');
         exit;
     }
     if ($slug !== false) {
@@ -248,7 +210,7 @@ function render_content_item(PDO $db, string $siteName, array $item, bool $isPre
         'item' => $item,
         'itemCategories' => get_categories_for_content($db, (int) $item['id']),
         'itemComments' => get_comments_for_content($db, (int) $item['id']),
-        'siteUser' => current_site_user(),
+        'siteUser' => current_account(),
     ]);
 }
 

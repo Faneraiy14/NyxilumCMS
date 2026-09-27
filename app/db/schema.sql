@@ -7,7 +7,12 @@ CREATE TABLE admin_users (
     password_hash VARCHAR(255) NOT NULL,
     -- admin: усе, включно з користувачами й налаштуваннями.
     -- editor: контент/меню/медіа, без доступу до users.php/settings.php.
-    role ENUM('admin', 'editor') NOT NULL DEFAULT 'editor',
+    -- moderator: поки без окремих прав в адмінці (роль-заготовка на майбутнє).
+    -- user: звичайний зареєстрований відвідувач сайту - лише коментарі,
+    --   без доступу в адмінку взагалі (require_admin_panel() відмовляє).
+    --   Самостійна реєстрація (admin/register.php) завжди дає ЛИШЕ цю
+    --   роль - вище може підвищити тільки вже залогінений admin.
+    role ENUM('admin', 'editor', 'moderator', 'user') NOT NULL DEFAULT 'editor',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- TOTP-секрет (base32) з'являється лише коли адмін вмикає 2FA собі сам
     -- через admin/2fa.php - totp_enabled лишається 0, доки він не підтвердить
@@ -93,20 +98,16 @@ CREATE TABLE settings (
     setting_value TEXT
 );
 
--- Відвідувачі сайту (реєстрація/коментарі) - НАВМИСНО окрема таблиця
--- від admin_users, не той самий механізм із третьою роллю: це геть
--- інша система (публічні акаунти без жодного доступу до адмінки), а
--- не рівень прав всередині адмінки. Той самий принцип найменших
--- привілеїв, що й окремі БД-користувачі на проєкт - двом системам
--- довіри нема сенсу ділити один механізм автентифікації.
-CREATE TABLE site_users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(64) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
+-- site_users прибрано (27.09.2026, об'єднана система акаунтів) -
+-- раніше окрема таблиця для відвідувачів (лише коментарі, без доступу
+-- в адмінку), тепер просто admin_users із роллю 'user'. Причина зміни:
+-- власник сайту хотів мати змогу "підвищити" зареєстрованого
+-- відвідувача до editor/admin - неможливо, якщо це справді геть окрема
+-- таблиця без жодного зв'язку з ролями. Розмежування "має доступ в
+-- адмінку" тепер робить require_admin_panel() (auth.php) - роль
+-- admin/editor проходить, moderator/user - ні, хоча всі логіняться тим
+-- самим механізмом.
+--
 -- body - НЕ trusted HTML (на відміну від content.body, куди пише лише
 -- адмін через Quill) - коментар пише будь-який зареєстрований
 -- відвідувач, тож шаблон виводить його через htmlspecialchars, ніколи
@@ -114,11 +115,11 @@ CREATE TABLE site_users (
 CREATE TABLE comments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     content_id INT NOT NULL,
-    site_user_id INT NOT NULL,
+    user_id INT NOT NULL,
     body VARCHAR(2000) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE,
-    FOREIGN KEY (site_user_id) REFERENCES site_users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES admin_users(id) ON DELETE CASCADE,
     INDEX idx_content (content_id, created_at)
 );
 

@@ -78,13 +78,13 @@ $langSwitchHref = '/set-lang?to=' . $targetLang . '&return=' . rawurlencode('/')
             // передає лише сторінкам ОДНОГО запису, шапка рендериться на
             // КОЖНІЙ сторінці (home/search/category/404 теж), тож не може
             // покладатись на те, що виклик render() цього разу його передав.
-            $headerSiteUser = current_site_user();
+            $headerSiteUser = current_account();
         ?>
         <div class="site-account">
             <?php if ($headerSiteUser) : ?>
-                <span><?php echo htmlspecialchars($headerSiteUser['username']); ?></span> · <a href="/logout">Вийти</a>
+                <span><?php echo htmlspecialchars($headerSiteUser['username']); ?></span> · <a href="/admin/logout.php">Вийти</a>
             <?php else : ?>
-                <a href="/login">Увійти</a> · <a href="/register">Реєстрація</a>
+                <a href="/admin/login.php">Увійти</a> · <a href="/admin/register.php">Реєстрація</a>
             <?php endif; ?>
         </div>
     </header>

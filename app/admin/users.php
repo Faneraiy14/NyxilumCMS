@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/activity.php';
-require_login();
+require_admin_panel();
 require_role('admin');
 
 $db = get_db();
@@ -14,6 +14,16 @@ function count_admins(PDO $db): int
     return (int) $db->query("SELECT COUNT(*) FROM admin_users WHERE role = 'admin'")->fetchColumn();
 }
 
+// Об'єднана система акаунтів (27.09.2026) - раніше лише 2 ролі, тепер 4.
+// Валідація списком (in_array), а не "=== 'admin' ? 'admin' : 'editor'" -
+// той старий вираз мовчки перетворював би moderator/user на editor.
+const VALID_ROLES = ['admin', 'editor', 'moderator', 'user'];
+
+function normalize_role(?string $role): string
+{
+    return in_array($role, VALID_ROLES, true) ? $role : 'editor';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     $action = $_POST['action'] ?? '';
@@ -21,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
-        $role = ($_POST['role'] ?? 'editor') === 'admin' ? 'admin' : 'editor';
+        $role = normalize_role($_POST['role'] ?? null);
 
         if ($username !== '' && strlen($password) >= 8) {
             $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -33,11 +43,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'update_role') {
         $id = (int) ($_POST['id'] ?? 0);
-        $role = ($_POST['role'] ?? 'editor') === 'admin' ? 'admin' : 'editor';
+        $role = normalize_role($_POST['role'] ?? null);
 
         // Не можна забрати останнього admin'а - інакше НІХТО більше не
-        // потрапить сюди чи в settings.php, щоб це виправити.
-        if ($role === 'editor' && $id === $myId) {
+        // потрапить сюди чи в settings.php, щоб це виправити. Було
+        // "=== 'editor'", тепер БУДЬ-яка непід-адмінська роль (editor/
+        // moderator/user) підпадає під те саме обмеження.
+        if ($role !== 'admin' && $id === $myId) {
             $error = 'Не можна понизити самого себе, поки ти єдиний адмін.';
         } else {
             $current = $db->prepare('SELECT username, role FROM admin_users WHERE id = ?');
@@ -116,6 +128,8 @@ $users = $db->query('SELECT id, username, role, created_at FROM admin_users ORDE
             <label>
                 Роль
                 <select name="role">
+                    <option value="user">user (лише коментарі на сайті, без адмінки)</option>
+                    <option value="moderator">moderator (поки без окремих прав в адмінці)</option>
                     <option value="editor">editor (контент/меню/медіа)</option>
                     <option value="admin">admin (усе + користувачі/налаштування)</option>
                 </select>
@@ -137,6 +151,8 @@ $users = $db->query('SELECT id, username, role, created_at FROM admin_users ORDE
                             <input type="hidden" name="action" value="update_role">
                             <input type="hidden" name="id" value="<?php echo (int) $user['id']; ?>">
                             <select name="role" onchange="this.form.submit()">
+                                <option value="user" <?php echo $user['role'] === 'user' ? 'selected' : ''; ?>>user</option>
+                                <option value="moderator" <?php echo $user['role'] === 'moderator' ? 'selected' : ''; ?>>moderator</option>
                                 <option value="editor" <?php echo $user['role'] === 'editor' ? 'selected' : ''; ?>>editor</option>
                                 <option value="admin" <?php echo $user['role'] === 'admin' ? 'selected' : ''; ?>>admin</option>
                             </select>

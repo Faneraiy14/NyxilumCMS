@@ -79,9 +79,85 @@ function attempt_login(string $username, string $password): string
 
     $_SESSION['admin_id'] = $user['id'];
     $_SESSION['admin_role'] = $user['role'];
+    $_SESSION['admin_username'] = $username;
     $_SESSION['last_activity'] = time();
     log_activity('login', 'auth', (int) $user['id'], '', $username);
     return 'ok';
+}
+
+// Об'єднана система акаунтів (27.09.2026) - те, що раніше було ОКРЕМОЮ
+// таблицею site_users/site_auth.php (акаунти відвідувачів лише для
+// коментарів), тепер просто ще один рядок у admin_users з роллю 'user'.
+// Один спільний логін/сесія для будь-якої ролі - "залогінений" (для
+// коментарів) і "має доступ в адмінку" (admin/editor) - тепер РІЗНІ
+// перевірки (is_logged_in() і require_admin_panel() нижче), а не різні
+// таблиці/сесійні ключі.
+//
+// Порожній рядок - успіх, інакше текст помилки для форми. Роль ЗАВЖДИ
+// 'user' тут - жорстко в INSERT, без жодного поля вибору ролі у формі
+// (самостійна реєстрація ніколи не дає admin/editor - лише "Підвищити"
+// в admin/users.php власником сайту може змінити роль).
+function register_account(string $username, string $password): string
+{
+    $username = trim($username);
+
+    if (!preg_match('/^[a-zA-Z0-9_]{3,32}$/', $username)) {
+        return 'Логін - 3-32 символи, лише латинські літери/цифри/підкреслення.';
+    }
+    if (strlen($password) < 8) {
+        return 'Пароль має бути щонайменше 8 символів.';
+    }
+
+    $db = get_db();
+    $stmt = $db->prepare('SELECT id FROM admin_users WHERE username = ?');
+    $stmt->execute([$username]);
+    if ($stmt->fetch()) {
+        return 'Цей логін вже зареєстровано.';
+    }
+
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+    $db->prepare("INSERT INTO admin_users (username, password_hash, role) VALUES (?, ?, 'user')")
+        ->execute([$username, $hash]);
+
+    // Одразу логінимо - новий 'user'-акаунт totp_enabled=0 за визначенням
+    // (щойно створений, 2FA ще ніде не вмикав), тому пряме встановлення
+    // сесії тут, без гілки "need_2fa", яка є в attempt_login().
+    start_admin_session();
+    session_regenerate_id(true);
+    $_SESSION['admin_id'] = (int) $db->lastInsertId();
+    $_SESSION['admin_role'] = 'user';
+    $_SESSION['admin_username'] = $username;
+    $_SESSION['last_activity'] = time();
+    log_activity('register', 'auth', (int) $_SESSION['admin_id'], '', $username);
+    return '';
+}
+
+/** @return array{id: int, username: string, role: string}|null */
+function current_account(): ?array
+{
+    if (!is_logged_in()) {
+        return null;
+    }
+    return [
+        'id' => (int) ($_SESSION['admin_id'] ?? 0),
+        'username' => (string) ($_SESSION['admin_username'] ?? ''),
+        'role' => (string) ($_SESSION['admin_role'] ?? ''),
+    ];
+}
+
+// require_login() лишається "залогінений хоч якийсь акаунт" (досить для
+// коментарів) - ця, нова функція додатково вимагає роль admin/editor,
+// тобто справжній доступ до панелі керування, а не просто будь-який
+// зареєстрований відвідувач. Викликати на початку КОЖНОЇ сторінки
+// адмінки замість require_login() (крім login.php/register.php).
+function require_admin_panel(): void
+{
+    require_login();
+    if (!in_array(current_role(), ['admin', 'editor'], true)) {
+        http_response_code(403);
+        echo 'Доступ заборонено: потрібна роль адміністратора чи редактора.';
+        exit;
+    }
 }
 
 /**
@@ -139,6 +215,7 @@ function verify_2fa_code(string $code): bool
     session_regenerate_id(true);
     $_SESSION['admin_id'] = $pendingId;
     $_SESSION['admin_role'] = $user['role'];
+    $_SESSION['admin_username'] = $user['username'];
     $_SESSION['last_activity'] = time();
     clear_pending_2fa();
     log_activity('login', 'auth', (int) $pendingId, '2FA', $user['username']);

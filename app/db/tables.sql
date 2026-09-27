@@ -2,7 +2,7 @@ CREATE TABLE admin_users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(64) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'editor') NOT NULL DEFAULT 'editor',
+    role ENUM('admin', 'editor', 'moderator', 'user') NOT NULL DEFAULT 'editor',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     totp_secret VARCHAR(32) NULL,
     totp_enabled TINYINT(1) NOT NULL DEFAULT 0
@@ -78,22 +78,18 @@ CREATE TABLE settings (
     setting_value TEXT
 );
 
-CREATE TABLE site_users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(64) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- site_users прибрано (27.09.2026) - об'єднана система акаунтів: звичайні
+-- відвідувачі тепер теж рядки в admin_users, з роллю 'user' (лише
+-- коментарі, без доступу в адмінку - require_admin_panel() у auth.php).
 
 CREATE TABLE comments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     content_id INT NOT NULL,
-    site_user_id INT NOT NULL,
+    user_id INT NOT NULL,
     body VARCHAR(2000) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE,
-    FOREIGN KEY (site_user_id) REFERENCES site_users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES admin_users(id) ON DELETE CASCADE,
     INDEX idx_content (content_id, created_at)
 );
 

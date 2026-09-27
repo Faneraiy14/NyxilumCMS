@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/activity.php';
-require_login();
+require_admin_panel();
 
 $db = get_db();
 

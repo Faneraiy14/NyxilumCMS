@@ -4,9 +4,18 @@ require_once __DIR__ . '/../includes/csrf.php';
 
 start_admin_session();
 
-if (is_logged_in()) {
-    header('Location: index.php');
+// Об'єднана система акаунтів (27.09.2026) - ця сторінка тепер спільна
+// для панелі керування (admin/editor) І звичайних відвідувачів (роль
+// user), що лише коментують на сайті - куди саме вести після входу
+// залежить від ролі, а не однаково для всіх, як було раніше.
+function redirect_after_login(): void
+{
+    header('Location: ' . (in_array(current_role(), ['admin', 'editor'], true) ? 'index.php' : '/'));
     exit;
+}
+
+if (is_logged_in()) {
+    redirect_after_login();
 }
 
 if (has_pending_2fa()) {
@@ -24,8 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $result = attempt_login($username, $password);
     if ($result === 'ok') {
-        header('Location: index.php');
-        exit;
+        redirect_after_login();
     }
     if ($result === 'need_2fa') {
         header('Location: verify-2fa.php');
@@ -63,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </label>
 
         <button type="submit">Увійти</button>
+        <p><a href="register.php" class="cancel-link">Зареєструватись</a> - для звичайних відвідувачів (лишати коментарі)</p>
     </form>
 </body>
 </html>

@@ -10,7 +10,7 @@ function get_comments_for_content(PDO $db, int $contentId): array
 {
     $stmt = $db->prepare(
         'SELECT c.id, c.body, c.created_at, u.username FROM comments c
-         JOIN site_users u ON u.id = c.site_user_id
+         JOIN admin_users u ON u.id = c.user_id
          WHERE c.content_id = ? ORDER BY c.created_at ASC'
     );
     $stmt->execute([$contentId]);
@@ -28,7 +28,7 @@ function add_comment(PDO $db, int $contentId, int $siteUserId, string $body): st
         return 'Коментар задовгий (максимум 2000 символів).';
     }
 
-    $db->prepare('INSERT INTO comments (content_id, site_user_id, body) VALUES (?, ?, ?)')
+    $db->prepare('INSERT INTO comments (content_id, user_id, body) VALUES (?, ?, ?)')
         ->execute([$contentId, $siteUserId, $body]);
     return '';
 }

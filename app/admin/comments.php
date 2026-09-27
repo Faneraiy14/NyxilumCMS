@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/activity.php';
-require_login();
+require_admin_panel();
 
 // Доступно editor'у теж, не лише admin - той самий рівень, що й
 // content.php/media.php (модерація коментарів - рутинна редакторська
